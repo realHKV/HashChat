@@ -1,0 +1,164 @@
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f5f7fb;
+    padding: 20px 0;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    background-color: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+}
+
+#messages {
+    height: 400px;
+    overflow-y: auto;
+    background-color: #ffffff;
+    border-radius: 8px;
+    border: 1px solid #e6e9f0;
+    padding: 15px;
+    margin-bottom: 15px;
+    display: flex;
+    flex-direction: column;
+}
+
+.message-container {
+    margin-bottom: 15px;
+    padding: 12px;
+    border-radius: 10px;
+    max-width: 75%;
+    word-break: break-word;
+    position: relative;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.incoming-message {
+    background-color: #f1f0f0;
+    border-top-left-radius: 0;
+    align-self: flex-start;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.outgoing-message {
+    background-color: #dcf8c6;
+    border-top-right-radius: 0;
+    text-align: right;
+    align-self: flex-end;
+    margin-left: auto;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.message-image {
+    max-width: 250px;
+    max-height: 250px;
+    border-radius: 8px;
+    margin-top: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.message-image:hover {
+    transform: scale(1.02);
+}
+
+#imagePreview {
+    display: flex;
+    align-items: center;
+    background-color: #f8f9fa;
+    padding: 8px;
+    border-radius: 8px;
+    border: 1px solid #ced4da;
+}
+
+.preview-image {
+    height: 100px;
+    max-width: 200px;
+    border-radius: 6px;
+    object-fit: contain;
+}
+
+.btn {
+    border-radius: 50px;
+    padding: 8px 16px;
+    transition: all 0.2s ease;
+}
+
+.btn-icon {
+    padding: 8px 10px;
+}
+
+.btn-primary {
+    background-color: #4c84ff;
+    border-color: #4c84ff;
+}
+
+.btn-success {
+    background-color: #28a745;
+    border-color: #28a745;
+}
+
+.btn-info {
+    background-color: #17a2b8;
+    border-color: #17a2b8;
+}
+
+.btn-danger {
+    background-color: #dc3545;
+    border-color: #dc3545;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.card {
+    border-radius: 10px;
+    border: 1px solid #e6e9f0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+textarea {
+    resize: none;
+    border-radius: 20px;
+    padding: 10px 15px;
+}
+
+.input-group-append .btn {
+    border-radius: 0 50px 50px 0;
+    margin-left: -1px;
+}
+
+#uploadImageBtn {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+#send {
+    border-radius: 0;
+}
+
+/* Add visual indication that the user can paste images */
+textarea::placeholder {
+    opacity: 0.7;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .message-container {
+        max-width: 85%;
+    }
+
+    .message-image {
+        max-width: 200px;
+    }
+}
