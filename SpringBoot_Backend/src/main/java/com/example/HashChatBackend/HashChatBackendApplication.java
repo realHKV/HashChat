@@ -11,5 +11,4 @@ public class HashChatBackendApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(HashChatBackendApplication.class, args);
 	}
-
 }

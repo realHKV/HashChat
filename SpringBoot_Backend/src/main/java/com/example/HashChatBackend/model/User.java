@@ -43,10 +43,7 @@ public class User {
     @Column(name = "token_expiry")
     private LocalDateTime tokenExpiry;
 
-//    // Profile fields
-//    @Column(unique = true)
-//    @Size(min = 3, max = 100)
-//    private String username;
+
 
     @Column(nullable = false)
     private String name;
