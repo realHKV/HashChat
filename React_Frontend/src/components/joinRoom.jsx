@@ -184,6 +184,31 @@ const JoinRoom = () => {
         // console.log('Navigated to /about');
     }, [navigate]);
 
+// Add these variables/hooks at the top of your component
+    const [touchStart, setTouchStart] = React.useState(null);
+    const [touchEnd, setTouchEnd] = React.useState(null);
+
+    // Minimum distance required to trigger a swipe
+    const minSwipeDistance = 50; 
+
+    const onTouchStart = (e) => {
+        setTouchEnd(null);
+        setTouchStart(e.targetTouches[0].clientX);
+    };
+
+    const onTouchMove = (e) => setTouchEnd(e.targetTouches[0].clientX);
+
+    const onTouchEnd = () => {
+        if (!touchStart || !touchEnd) return;
+        const distance = touchStart - touchEnd;
+        const isLeftSwipe = distance > minSwipeDistance;
+    
+        // If user swipes left more than 50px, close the sidebar
+        if (isLeftSwipe) {
+            setIsSidebarOpen(false);
+        }
+    };
+       
   return (
         <div className="min-h-screen flex bg-gray-900 text-gray-100">
             {/* Image Preview Modal */}
@@ -193,7 +218,10 @@ const JoinRoom = () => {
             />
 
             {/* Sidebar Container */}
-            <div className={`
+            <div onTouchStart={onTouchStart}
+            onTouchMove={onTouchMove}
+            onTouchEnd={onTouchEnd}
+            className={`
                 fixed top-0 left-0 h-full bg-gray-800 dark:bg-gray-950 text-white
                 transform transition-transform duration-300 ease-in-out z-50
                 w-64 sm:w-64 md:w-72 lg:w-80 xl:w-96
