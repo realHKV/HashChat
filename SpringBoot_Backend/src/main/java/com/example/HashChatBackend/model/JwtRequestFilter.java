@@ -34,6 +34,15 @@ public class JwtRequestFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
+        // Inside doFilterInternal method
+        String requestPath = request.getRequestURI();
+
+        // 1. Allow WebSocket handshake without token
+        if (requestPath.startsWith("/chat")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         // IMPORTANT: Skip JWT processing for OPTIONS requests (CORS preflight)
         if (HttpMethod.OPTIONS.name().equalsIgnoreCase(request.getMethod())) {
             filterChain.doFilter(request, response);

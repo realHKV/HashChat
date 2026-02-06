@@ -1,10 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { Navigate, useNavigate } from 'react-router';
-// import { toast } from 'react-toastify';
 import { getProfileApi } from '../services/RoomService';
 import toast from 'react-hot-toast';
-import HttpClient, { BASE_URL } from '../config/AxiosHelper';
-
 
 export const AuthContext = createContext(null);
 
@@ -13,9 +10,11 @@ export const AuthProvider = ({ children }) => {
 
     const [token, setToken] = useState(() => sessionStorage.getItem('jwtToken') || null);
     const [userProfile, setUserProfile] = useState(null);
-    const [loadingAuth, setLoadingAuth] = useState(true); // Keep loading true initially
+    const [loadingAuth, setLoadingAuth] = useState(true);
+    
+    // Flag to prevent ProtectedRoute from redirecting during logout transition
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-    // This function sets the auth data (token and profile)
     const setAuthData = useCallback((newToken, newUserProfile) => {
         setToken(newToken);
         setUserProfile(newUserProfile);
@@ -30,69 +29,55 @@ export const AuthProvider = ({ children }) => {
         }
     }, []);
 
-    // Function to refresh the user's profile based on the stored token
     const refreshUserProfile = useCallback(async () => {
         const storedToken = sessionStorage.getItem('jwtToken');
-        // console.log("refreshUserProfile called. Stored token:", !!storedToken);
-
         if (storedToken) {
-            // HttpClient.setAuthToken(storedToken); // <-- REMOVE THIS LINE: Not needed, interceptor handles it
             try {
                 const profileResponse = await getProfileApi();
-                // console.log("Profile API response:", profileResponse); // Log profile response
-                setAuthData(storedToken, profileResponse); // Update context with fresh profile
-                // console.log("Profile data:", profileResponse.data);
-                setLoadingAuth(false); // Authentication successful, stop loading
+                setAuthData(storedToken, profileResponse);
             } catch (error) {
                 console.error("Failed to fetch user profile:", error);
-                toast.error("Failed to load user profile. Please log in again.");
-                setAuthData(null, null); // Clear token and profile on error
-                setLoadingAuth(false); // Stop loading even on error
-                // navigate('/login'); // Optionally navigate to login on profile fetch failure
+                // Don't clear auth immediately on error to prevent flickering, 
+                // but token might be invalid.
+                setAuthData(null, null); 
             }
         } else {
-            // console.log("refreshUserProfile: No token, setting loadingAuth to false.");
-            setAuthData(null, null); // Ensure no stale token/profile
-            setLoadingAuth(false); // No token, authentication complete (unauthenticated)
+            setAuthData(null, null);
         }
-    }, [setAuthData, navigate]);
+        setLoadingAuth(false);
+    }, [setAuthData]);
 
-    // New login function to be exposed via context
     const login = useCallback(async (jwtToken) => {
-        setLoadingAuth(true); // Start loading when login process begins
-        setAuthData(jwtToken, null); // Store the token immediately, profile is null for now
-
-        // Immediately refresh profile after setting the token in sessionStorage
-        // The interceptor will pick up the token from sessionStorage for getProfileApi()
+        setLoadingAuth(true);
+        setAuthData(jwtToken, null);
         await refreshUserProfile();
     }, [setAuthData, refreshUserProfile]);
 
-
-    // Logout function
+    // --- UPDATED LOGOUT LOGIC ---
     const logout = useCallback(() => {
-        setAuthData(null, null);
-        // HttpClient.setAuthToken(null); // <-- REMOVE THIS LINE: Not needed, interceptor handles it
-        toast.success("Logged out successfully!", { icon: '👋' });
-        navigate('/login');
+        setIsLoggingOut(true); // 1. Pause ProtectedRoute redirects
+        
+        // 2. Navigate immediately to the public route
+        navigate('/'); 
+        
+        // 3. Delay clearing data slightly to allow the Router to unmount protected components
+        // This prevents race conditions where the protected component tries to fetch data 
+        // without a token (CORS/403 errors) or redirects to /login.
+        setTimeout(() => {
+            setAuthData(null, null);
+            setIsLoggingOut(false); 
+            toast.success("Logged out successfully!", { icon: '👋' });
+        }, 300); // 300ms delay is usually sufficient
     }, [setAuthData, navigate]);
 
-    // Effect to run on initial load to check existing token
     useEffect(() => {
-        // console.log("AuthContext useEffect running. Current token state:", !!token);
-        // Only refresh if we haven't already loaded or explicitly have a token in state
-        if (token && !userProfile) { // If token exists but profile is not loaded (e.g., first load)
+        // Initial load check
+        if (token && !userProfile) {
             refreshUserProfile();
-        } else if (!token) { // If no token from sessionStorage, we're not authenticated
-             setLoadingAuth(false);
-        } else { // Token and userProfile already loaded from sessionStorage
+        } else {
             setLoadingAuth(false);
         }
-    }, [token, userProfile, refreshUserProfile]); // Dependencies ensure this runs when token or profile change
-
-
-    // Axios interceptor is already set up in AxiosHelper.js and imported as HttpClient
-    // No need to set it up again here. The import of HttpClient already makes it available.
-    // The interceptor automatically reads from sessionStorage.
+    }, [token, userProfile, refreshUserProfile]);
 
     const isAuthenticated = useMemo(() => !!token && !!userProfile, [token, userProfile]);
 
@@ -100,12 +85,13 @@ export const AuthProvider = ({ children }) => {
         token,
         userProfile,
         loadingAuth,
-        login, // Expose the new login function
+        isLoggingOut, 
+        login,
         logout,
         isAuthenticated,
-        setUserProfile, // Expose setUserProfile for profile updates
+        setUserProfile,
         refreshUserProfile
-    }), [token, userProfile, loadingAuth, login, logout, isAuthenticated, setUserProfile]);
+    }), [token, userProfile, loadingAuth, isLoggingOut, login, logout, isAuthenticated, setUserProfile]);
 
     return (
         <AuthContext.Provider value={authContextValue}>
@@ -122,12 +108,13 @@ export const useAuth = () => {
     return context;
 };
 
-// ProtectedRoute.jsx (or AuthContext.js if defined there)
+// --- UPDATED PROTECTED ROUTE ---
 export const ProtectedRoute = ({ children }) => {
-    const { token, loadingAuth } = useAuth();
-    // console.log("ProtectedRoute rendering: token=", !!token, "loadingAuth=", loadingAuth);
+    const { token, loadingAuth, isLoggingOut } = useAuth();
 
-    if (loadingAuth) {
+    // If loading OR currently logging out, render a loading state.
+    // This effectively unmounts the protected component immediately, stopping its API calls.
+    if (loadingAuth || isLoggingOut) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900">
                 <div className="text-center">
@@ -137,13 +124,13 @@ export const ProtectedRoute = ({ children }) => {
             </div>
         );
     }
+    
+    // Only redirect to login if we are fully loaded, not logging out, and have no token
     return token ? children : <Navigate to="/login" replace />;
 };
 
-// PublicRoute.jsx (or AuthContext.js if defined there)
 export const PublicRoute = ({ children }) => {
     const { token, loadingAuth } = useAuth();
-    // console.log("PublicRoute rendering: token=", !!token, "loadingAuth=", loadingAuth);
 
     if (loadingAuth) {
         return (
@@ -155,5 +142,5 @@ export const PublicRoute = ({ children }) => {
             </div>
         );
     }
-    return token ? <Navigate to="/" replace /> : children; // Navigate to home if authenticated
+    return token ? <Navigate to="/" replace /> : children;
 };

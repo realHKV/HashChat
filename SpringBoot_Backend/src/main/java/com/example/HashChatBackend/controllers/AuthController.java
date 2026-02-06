@@ -6,6 +6,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -98,6 +100,33 @@ public class AuthController {
             return ResponseEntity.ok(Map.of("message", message));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+
+    @DeleteMapping("/delete-account")
+    public ResponseEntity<?> deleteUser(@RequestBody Map<String, String> request) {
+        System.out.println("delete account called");
+        try {
+            // Get authenticated user's email from JWT token
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String email = authentication.getName(); // This is the email from JWT
+
+            // Get password from request body
+            String password = request.get("password");
+
+            if (password == null || password.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Password is required for account deletion."));
+            }
+
+            // Delete user account
+            String message = authService.deleteUser(email, password);
+            return ResponseEntity.ok(Map.of("message", message));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "An unexpected error occurred during account deletion."));
         }
     }
 }

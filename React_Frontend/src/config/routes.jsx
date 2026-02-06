@@ -8,11 +8,37 @@ import ChatPage from '../components/ChatPage';
 import { ProtectedRoute, PublicRoute, useAuth } from '../context/AuthContext';
 import ProfilePage from '../components/ProfilePage.jsx';
 import AboutPage from '../components/AboutPage.jsx';
+import GlobalChat from '../components/GlobalChat.jsx';
+import DeleteAccount from '../components/DeleteAccount.jsx';
 
+// Wrapper component to redirect authenticated users from global chat to rooms
+const GlobalChatOrRedirect = () => {
+  const { userProfile, token, isLoggingOut } = useAuth();
+  
+  // FIX: If we are in the process of logging out, do NOT redirect to rooms.
+  // Just show the Global Chat (guest view).
+  if (isLoggingOut) {
+    return <GlobalChat />;
+  }
+
+  // If user is authenticated, redirect to rooms
+  if (userProfile && token) {
+    return <Navigate to="/rooms" replace />;
+  }
+  
+  // Otherwise show global chat (for guests)
+  return <GlobalChat />;
+};
 
 const AppRoutes = () => {
   return (
     <Routes>
+      {/* Global Chat - Landing Page for guests, redirects authenticated users to /rooms */}
+      <Route path="/" element={<GlobalChatOrRedirect />} />
+      
+      {/* Global Chat - Accessible route for authenticated users who explicitly want to join */}
+      <Route path="/global" element={<GlobalChat />} />
+
       {/* Public routes - only accessible when not logged in */}
       <Route
         path="/login"
@@ -38,7 +64,7 @@ const AppRoutes = () => {
           </PublicRoute>
         }
       />
-      <Route // Added the About page route here
+      <Route // About page accessible to non-logged in users
         path="/about"
         element={
           <PublicRoute>
@@ -48,7 +74,7 @@ const AppRoutes = () => {
       />
 
       {/* Protected routes - only accessible when logged in */}
-      <Route // Added the About page route here
+      <Route // About page for logged in users
         path="/aboutPage"
         element={
           <ProtectedRoute>
@@ -57,16 +83,17 @@ const AppRoutes = () => {
         }
       />
 
-      <Route
-        path="/"
+      <Route // Private rooms
+        path="/rooms"
         element={
           <ProtectedRoute>
             <JoinRoom />
           </ProtectedRoute>
         }
       />
+      
       <Route
-        path="/chat" // Corrected this to include roomId parameter
+        path="/chat"
         element={
           <ProtectedRoute>
             <ChatPage />
@@ -83,10 +110,20 @@ const AppRoutes = () => {
         }
       />
 
-      {/* Catch all route - redirect to login if not authenticated, to home if authenticated */}
+      {/* Delete Account Page - Protected Route */}
+      <Route
+        path="/delete-account"
+        element={
+          <ProtectedRoute>
+            <DeleteAccount />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Catch all route - redirect to home */}
       <Route
         path="*"
-        element={<Navigate to="/login" replace />}
+        element={<Navigate to="/" replace />}
       />
     </Routes>
   );

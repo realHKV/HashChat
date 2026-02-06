@@ -106,6 +106,14 @@ export const updateProfileApi = async (formData) => {
     return response.data;
 };
 
+export const deleteAccountApi = async (password) => {
+    // For DELETE requests, data must be sent in the 'data' config property
+    const response = await HttpClient.delete('/api/v1/auth/delete-account', {
+        data: { password }
+    });
+    return response.data;
+};
+
 // export const checkUsernameApi = async (username) => {
 //     const response = await HttpClient.get(`/api/v1/user/check-username?username=${username}`);
 //     return response.data;

@@ -12,10 +12,9 @@ import { MdMenu } from 'react-icons/md'
 import {HashLoader} from 'react-spinners'
 
 const JoinRoom = () => {
-    // console.log("JoinRoom")
-    const defaultUserPic = "https://avatar.iran.liara.run/public/43";
+    // UPDATED: Using UI Avatars instead of the broken link
+    const defaultUserPic = "https://ui-avatars.com/api/?name=User&background=random&color=fff&bold=true";
 
-   // Destructure 'name' from useChatContext and rename it to avoid conflict 
    const {  currentUser: chatContextUserName,
             roomId: contextRoomId,
             setRoomId,
@@ -25,21 +24,18 @@ const JoinRoom = () => {
     const { userProfile, loadingAuth ,logout} = useAuth();
     const navigate = useNavigate();
     const [previewImage,setPreviewImage] = useState("");
-    const [loading, setLoading] = useState(false); //for form loading
+    const [loading, setLoading] = useState(false); 
 
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-    const [prevRooms, setPrevRooms] = useState([]); // State to store previously joined rooms
-    const [loadingHistory, setLoadingHistory] = useState(true); // Loading state for history
+    const [prevRooms, setPrevRooms] = useState([]); 
+    const [loadingHistory, setLoadingHistory] = useState(true); 
 
    const [details,setDetails] = useState({
-     // Set initial 'name' to the context user's name, or an empty string if null/undefined 
      name: userProfile?.name || chatContextUserName || "",
      roomId:""
    })
 
    useEffect(() => {
-       // Only update if userProfile is loaded and its name is different from current form name
-       // And also make sure we are not loading authentication (profile has been fetched)
        if (!loadingAuth && userProfile && userProfile.name && details.name !== userProfile.name) {
            setDetails(prevDetails => ({
                ...prevDetails,
@@ -49,13 +45,12 @@ const JoinRoom = () => {
    }, [userProfile, loadingAuth, details.name]);
 
 
-   // Effect to fetch previously joined rooms when userProfile is available
     useEffect(() => {
         const fetchRoomHistory = async () => {
-            if (userProfile && !loadingAuth) { // Ensure userProfile is loaded and auth is done
+            if (userProfile && !loadingAuth) { 
                 setLoadingHistory(true);
                 try {
-                    const history = await getRoomHistoryApi(10); // Fetch top 10 rooms
+                    const history = await getRoomHistoryApi(10); 
                     setPrevRooms(history);
                 } catch (error) {
                     console.error("Error fetching room history:", error);
@@ -64,22 +59,16 @@ const JoinRoom = () => {
                     setLoadingHistory(false);
                 }
             } else if (!loadingAuth && !userProfile) {
-                // If auth is done but no userProfile, likely not logged in or profile not completed
-                setPrevRooms([]); // Clear any previous rooms if not logged in
+                setPrevRooms([]); 
                 setLoadingHistory(false);
             }
         };
 
         fetchRoomHistory();
-    }, [userProfile, loadingAuth]); // Rerun when userProfile or loadingAuth changes
-
-
+    }, [userProfile, loadingAuth]);
 
    function handleFormInputChange(event){
-        setDetails({
-            ...details,
-            [event.target.name]:event.target.value
-        })
+        setDetails({ ...details, [event.target.name]:event.target.value })
    }
 
    function validateForm(){
@@ -92,135 +81,98 @@ const JoinRoom = () => {
 
    async function joinRoom(){
     if(validateForm()){
-        setLoading(true); // Start loading
+        setLoading(true); 
         try {
-            const room = await joinChatApi(details.roomId); //return room object
+            const room = await joinChatApi(details.roomId); 
             toast.success("Room Joined Successfully !!");
-            
             await recordRoomVisitApi(room.id);
-
             setCurrentUser(details); 
             setRoomId(details.roomId);
             setConnected(true);
-
             navigate("/chat");
         } catch (error) {
-            // Check if error.response exists before accessing its properties
             if (error.response && error.response.data) {
-                // Assuming the backend sends a plain string error message for 4xx errors
                 toast.error(error.response.data || "Failed to join room.");
             } else if (error.message) {
                 toast.error(`Error joining room: ${error.message}`);
             } else {
                 toast.error("Error in joining room !!");
             }
-            // Removed console.error
         } finally {
-            setLoading(false); // End loading
+            setLoading(false);
         }
     }
    }
 
    async function createRoom(){
     if(validateForm()){
-        setLoading(true); // Start loading
+        setLoading(true); 
         try {
             const response = await createRoomApi(details.roomId);
             toast.success("Room Created Successfully !!");
-            
             await recordRoomVisitApi(response.id);
-            setCurrentUser(userProfile); // Make sure to update context with the name from the form
+            setCurrentUser(userProfile);
             setRoomId(response.roomId);
             setConnected(true);
             navigate("/chat");
         } catch (error) {
             if (error.response && error.response.data) {
-                // Assuming the backend sends a plain string error message for 4xx errors
                 toast.error(error.response.data || "Failed to create room.");
             } else if (error.message) {
                 toast.error(`Error creating room: ${error.message}`);
             } else {
                 toast.error("Error in creating room !!"); 
             }
-            // Removed console.error
         } finally {
-            setLoading(false); // End loading
+            setLoading(false);
         }
     }
 }
 
-   // New handler for clicking on a previous room in the sidebar
     const handleSelectPrevRoom = (roomIdToJoin) => {
         setDetails(prevDetails => ({
             ...prevDetails,
-            roomId: roomIdToJoin // Populate the roomId input field
+            roomId: roomIdToJoin 
         }));
-        // Optionally, automatically join the room after selecting
-        // You might want to ask for confirmation or just populate and let user click Join
-        // joinRoom(); // This would trigger an immediate join
-        setIsSidebarOpen(false); // Close sidebar after selection
+        setIsSidebarOpen(false); 
     };
-
 
    const handleEditProfile = () => {
        navigate('/profile'); 
-       // Optionally close the sidebar after clicking
        setIsSidebarOpen(false); 
    };
 
+   // FIX: Only call logout(). Context handles redirection to '/'
    const handleLogout = () => {
        logout(); 
-       // AuthContext's logout already handles navigation to /login and clearing state
-       setIsSidebarOpen(false); // Close sidebar on logout
    };
 
    const openImagePreview = (imageUrl) => {
         setPreviewImage(imageUrl);
     };
 
-    const handleAboutClick = useCallback(() => {
-        // console.log('About button clicked');
-        navigate('/about');
-        // console.log('Navigated to /about');
-    }, [navigate]);
-
-// Add these variables/hooks at the top of your component
+    // Swipe logic
     const [touchStart, setTouchStart] = React.useState(null);
     const [touchEnd, setTouchEnd] = React.useState(null);
-
-    // Minimum distance required to trigger a swipe
     const minSwipeDistance = 50; 
 
     const onTouchStart = (e) => {
         setTouchEnd(null);
         setTouchStart(e.targetTouches[0].clientX);
     };
-
     const onTouchMove = (e) => setTouchEnd(e.targetTouches[0].clientX);
-
     const onTouchEnd = () => {
         if (!touchStart || !touchEnd) return;
         const distance = touchStart - touchEnd;
         const isLeftSwipe = distance > minSwipeDistance;
-    
-        // If user swipes left more than 50px, close the sidebar
-        if (isLeftSwipe) {
-            setIsSidebarOpen(false);
-        }
+        if (isLeftSwipe) { setIsSidebarOpen(false); }
     };
-       
+
   return (
         <div className="min-h-screen flex bg-gray-900 text-gray-100">
-            {/* Image Preview Modal */}
-            <ImagePreviewModal
-                src={previewImage}
-                onClose={() => setPreviewImage(null)}
-            />
+            <ImagePreviewModal src={previewImage} onClose={() => setPreviewImage(null)} />
 
-            {/* Sidebar Container */}
-            <div onTouchStart={onTouchStart}
-            onTouchMove={onTouchMove}
-            onTouchEnd={onTouchEnd}
+            <div onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}
             className={`
                 fixed top-0 left-0 h-full bg-gray-800 dark:bg-gray-950 text-white
                 transform transition-transform duration-300 ease-in-out z-50
@@ -228,14 +180,9 @@ const JoinRoom = () => {
                 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
                 overflow-hidden flex flex-col
             `}>
-                
-
-                {/* Sidebar Header: HASHCHAT title */}
                 <div className="py-4 px-4 bg-gray-900 dark:bg-gray-950 relative shadow-md ">
                     <h2 className="text-2xl sm:text-3xl font-extrabold text-rose-500 text-center flex-grow">HASHCHAT</h2>
                 </div>
-                
-                {/* Close Sidebar Button (Moved here for alignment) */}
                 <button
                     onClick={() => setIsSidebarOpen(false)}
                     className="absolute top-4 right-4 text-gray-400 hover:text-white text-2xl font-bold"
@@ -244,15 +191,15 @@ const JoinRoom = () => {
                     &times;
                 </button>
 
-                {/* Sidebar Content */}
                 <div className="flex-grow p-4 md:p-6 overflow-y-auto">
-                    {/* User Profile Section */}
                     <div className="mb-6 text-center">
                         <img
-                            src={userProfile?.profilePicUrl || defaultUserPic}
+                            // UPDATED: Safe Avatar URL
+                            src={userProfile?.profilePicUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(userProfile?.name || "User")}&background=random&color=fff&bold=true`}
                             alt="User Profile"
                             className="w-20 h-20 sm:w-24 sm:h-24 rounded-full mx-auto object-cover border-2 border-rose-500 cursor-pointer mb-2"
                             onClick={() => openImagePreview(userProfile?.profilePicUrl)}
+                            onError={(e) => {e.target.src = defaultUserPic}}
                         />
                         <h3 className="text-lg sm:text-xl font-semibold mt-2 truncate">
                             {userProfile?.name || "Guest User"}
@@ -264,8 +211,13 @@ const JoinRoom = () => {
                         )}
                     </div>
                     
-                    {/* Profile Actions */}
                     <div className="flex flex-col gap-3 mt-4 border-t border-gray-700 pt-4">
+                        <button
+                            onClick={() => navigate('/global')}
+                            className="w-full py-2 px-4 rounded-lg bg-green-600 hover:bg-green-700 text-white font-medium transition duration-200 text-base sm:text-lg"
+                        >
+                            Join Global Chat
+                        </button>
                         <button
                             onClick={handleEditProfile}
                             className="w-full py-2 px-4 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition duration-200 text-base sm:text-lg"
@@ -280,7 +232,6 @@ const JoinRoom = () => {
                         </button>
                     </div>
 
-                    {/* Previously Joined Rooms */}
                     <h4 className="text-base sm:text-lg font-medium mb-3 mt-6 text-gray-300 border-b border-gray-700 pb-2">Previously Joined Rooms</h4>
                     <ul className="space-y-2">
                         {loadingHistory ? (
@@ -303,7 +254,6 @@ const JoinRoom = () => {
                 </div>
             </div>
 
-            {/* Toggle Button for sidebar (top-left) - Moved outside the main content area */}
             <button
                 onClick={() => setIsSidebarOpen(true)}
                 className={`fixed top-4 left-4 p-2 text-white font-extrabold text-lg sm:text-xl bg-rose-600 hover:bg-rose-700 rounded-md shadow-lg z-40 flex items-center justify-center ${isSidebarOpen ? 'hidden' : ''}`}
@@ -314,18 +264,15 @@ const JoinRoom = () => {
                 <span className="sm:hidden">HASHCHAT</span>
             </button>
 
-            {/* About Page Button (top-right) */}
             <Link
                 to="/aboutPage"
                 className="fixed top-4 right-4 p-2 text-white font-extrabold text-lg sm:text-xl bg-blue-600 hover:bg-blue-700 rounded-md shadow-lg z-40 flex items-center justify-center"
                 aria-label="About HashChat"
             >
                 <span className="hidden sm:inline">About HashChat</span>
-                <span className="sm:hidden">About</span> {/* Abbreviation for small screens */}
+                <span className="sm:hidden">About</span> 
             </Link>
 
-
-            {/* Main Content Area */}
             <div className={`
                 flex-grow flex flex-col items-center justify-center min-h-screen
                 transition-all duration-300 ease-in-out
@@ -339,7 +286,6 @@ const JoinRoom = () => {
                     <img src={chatIcon} className="w-20 sm:w-24 mx-auto mb-6" alt="Chat Icon"/>
                     <h1 className="text-2xl sm:text-3xl font-bold text-center mb-6 text-blue-400">Join Room / Create Room</h1>
                     
-                    {/* Your Name Input */}
                     <div className="mb-4">
                         <label htmlFor="name" className="block text-gray-300 text-sm sm:text-base font-semibold mb-2">Your Name</label>
                         <input
@@ -354,7 +300,6 @@ const JoinRoom = () => {
                         />
                     </div>
                     
-                    {/* Room ID Input */}
                     <div className="mb-6">
                         <label htmlFor="roomId" className="block text-gray-300 text-sm sm:text-base font-semibold mb-2">Room ID / New Room ID</label>
                         <input
@@ -369,7 +314,6 @@ const JoinRoom = () => {
                         />
                     </div>
                     
-                        {/* Buttons */}
                         <div className="flex flex-col gap-3">
                             <button
                                 onClick={joinRoom}

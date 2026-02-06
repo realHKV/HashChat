@@ -32,34 +32,43 @@ public class WebSocketEventListener {
     private UserPresenceRoomService userPresenceService;
 
     @Autowired
-    private UserService userService; // Inject UserService to get User object by email
+    private UserService userService;
 
     @EventListener
     public void handleWebSocketSubscribeListener(SessionSubscribeEvent event) {
         SimpMessageHeaderAccessor headerAccessor = SimpMessageHeaderAccessor.wrap(event.getMessage());
         String destination = (String) headerAccessor.getHeader(SimpMessageHeaderAccessor.DESTINATION_HEADER);
         String sessionId = headerAccessor.getSessionId();
-        String userEmail = Objects.requireNonNull(event.getUser()).getName(); // Principal name is email
 
-        if (destination != null && destination.startsWith("/topic/room/")) {
-            Matcher matcher = ROOM_ID_PATTERN.matcher(destination);
-            if (matcher.matches()) {
-                String roomId = matcher.group(1);
+        // FIX 1: Ignore subscriptions that are NOT for private rooms
+        // If it's global chat (/topic/global), we don't need to track presence
+        if (destination == null || !destination.startsWith("/topic/room/")) {
+            return;
+        }
 
-                // Get the actual User object to pass its ID to the presence service
-                User user = userService.getUserByEmail(userEmail); // Fetch user details from DB
-                if (user == null) {
-                    System.err.println("User not found for email: " + userEmail + " during subscription.");
-                    return; // Or handle as an error
-                }
+        // FIX 2: If we are here, it IS a private room. Now we check for a user.
+        // If a Guest tries to subscribe to a private room, ignore or block them.
+        if (event.getUser() == null) {
+            // Guests cannot be tracked in private rooms because they have no DB ID.
+            // Security: WebSocketConfig should already block this, but this prevents crashes.
+            return;
+        }
 
-                // Add user (using ID and email) to the room's active list
-                List<UserProfileDTO> activeUserProfiles = userPresenceService.addUserToRoom(roomId, user.getId(), user.getEmail(), sessionId);
+        String userEmail = event.getUser().getName();
 
-                // Notify all clients in this room about the updated active user list
-                messagingTemplate.convertAndSend("/topic/room/" + roomId + "/activeUsers", activeUserProfiles);
-                System.out.println("User " + userEmail + " subscribed to room " + roomId + ". Active user profiles sent.");
+        Matcher matcher = ROOM_ID_PATTERN.matcher(destination);
+        if (matcher.matches()) {
+            String roomId = matcher.group(1);
+
+            User user = userService.getUserByEmail(userEmail);
+            if (user == null) {
+                System.err.println("User not found for email: " + userEmail);
+                return;
             }
+
+            List<UserProfileDTO> activeUserProfiles = userPresenceService.addUserToRoom(roomId, user.getId(), user.getEmail(), sessionId);
+            messagingTemplate.convertAndSend("/topic/room/" + roomId + "/activeUsers", activeUserProfiles);
+            System.out.println("User " + userEmail + " subscribed to room " + roomId + ". Active users updated.");
         }
     }
 
@@ -67,19 +76,25 @@ public class WebSocketEventListener {
     public void handleWebSocketDisconnectListener(SessionDisconnectEvent event) {
         SimpMessageHeaderAccessor headerAccessor = SimpMessageHeaderAccessor.wrap(event.getMessage());
         String sessionId = headerAccessor.getSessionId();
-        String userEmail = (event.getUser() != null) ? event.getUser().getName() : "Unknown User";
 
+        // FIX 3: Handle disconnects for Guests safely
+        if (event.getUser() == null) {
+            // Guest disconnected. Since guests aren't tracked in UserPresenceService,
+            // we typically don't need to do anything here unless you track global guest counts.
+            System.out.println("Guest user disconnected: " + sessionId);
+            return;
+        }
+
+        String userEmail = event.getUser().getName();
         System.out.println("User disconnected: " + userEmail + " (Session ID: " + sessionId + ")");
 
-        // Remove user from the room's active list and get affected room with updated profiles
+        // Remove user from the room's active list
         RoomPresenceInfo roomPresenceInfo = userPresenceService.removeUserFromRoom(sessionId);
 
         if (roomPresenceInfo != null) {
             String roomId = roomPresenceInfo.getRoomId();
-            List<UserProfileDTO> remainingActiveUserProfiles = roomPresenceInfo.getActiveUsers(); // Get the updated list of profiles
-            // Notify all clients in the affected room about the updated active user list
+            List<UserProfileDTO> remainingActiveUserProfiles = roomPresenceInfo.getActiveUsers();
             messagingTemplate.convertAndSend("/topic/room/" + roomId + "/activeUsers", remainingActiveUserProfiles);
-            System.out.println("User " + userEmail + " disconnected from room " + roomId + ". Remaining active user profiles sent.");
         }
     }
 }

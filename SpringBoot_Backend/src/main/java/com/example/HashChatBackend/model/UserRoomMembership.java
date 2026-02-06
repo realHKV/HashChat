@@ -22,16 +22,6 @@ public class UserRoomMembership {
     @EmbeddedId
     private UserRoomMembershipId id;
 
-    // --- REMOVE THESE REDUNDANT FIELDS ---
-    // These fields are already part of the @EmbeddedId and defined in UserRoomMembershipId.
-    // Having them here *with* @Column annotations creates the duplicate mapping error.
-    // @Column(name = "user_id", insertable = false, updatable = false)
-    // private Long userId;
-    //
-    // @Column(name = "room_mongo_id", insertable = false, updatable = false)
-    // private String roomMongoId;
-    // --- END REMOVE ---
-
 
     // Additional fields for the relationship
     @CreationTimestamp
@@ -50,10 +40,7 @@ public class UserRoomMembership {
     private User user;
 
 
-    // --- CONVENIENCE GETTERS (Optional but Recommended) ---
-    // If you need direct access to userId or roomMongoId without calling id.getUserId(),
-    // create simple getters that delegate to the embedded ID.
-    // These do NOT need @Column annotations.
+
     public Long getUserId() {
         return id != null ? id.getUserId() : null;
     }
