@@ -1,7 +1,9 @@
 # HashChat
 
 **A secure and robust real-time messaging platform featuring a public Global Stage and secure Private Rooms.**
+
 https://merry-twilight-8ca8f0.netlify.app
+
 ---
 
 ## 📖 Overview
