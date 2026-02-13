@@ -64,11 +64,16 @@ The system utilizes a **Hybrid Database Architecture**, leveraging **PostgreSQL*
 
 | **Global Stage (Mobile)** | **Private Room (Desktop)** |
 |:---:|:---:|
-| ![Global Chat](https://placehold.co/300x600?text=Screenshot+Mobile) | ![Private Room](https://placehold.co/600x400?text=Screenshot+Desktop) |
+| ![temp](https://github.com/user-attachments/assets/4aadefa3-8c65-4bec-8dca-ffd28106ecad)
+
+ | <img width="1911" height="909" alt="image" src="https://github.com/user-attachments/assets/859208b0-dcfd-4d49-8e1e-15649cd95f19" />
+ |
 
 | **Login / Auth** | **Profile Settings** |
 |:---:|:---:|
-| ![Login](https://placehold.co/400x300?text=Login+Screen) | ![Profile](https://placehold.co/400x300?text=Profile+Screen) |
+| <img width="1910" height="914" alt="image" src="https://github.com/user-attachments/assets/9bc295df-da5b-484d-ba9a-4c94a0fe7c7f" />
+ | <img width="1785" height="913" alt="image" src="https://github.com/user-attachments/assets/c68bfb22-5c4f-4a86-8bdb-6b83167f2a6a" />
+|
 
 ---
 
