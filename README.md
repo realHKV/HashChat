@@ -172,8 +172,8 @@ Distributed under the MIT License. See `LICENSE` for more information.
 
 ---
 
-## 👤 reakHKV
+## 👤 realHKV
 
 **Harsh Kumar Verma**
-* LinkedIn: [Your LinkedIn Profile](https://linkedin.com/in/yourprofile)
-* GitHub: [imnotharsh](https://github.com/imnotharsh)
+* LinkedIn: [realHKV]([https://linkedin.com/in/yourprofile](https://www.linkedin.com/in/harsh-kumar-verma-a41847259/))
+* GitHub: [realHKV](https://github.com/realHKV)
