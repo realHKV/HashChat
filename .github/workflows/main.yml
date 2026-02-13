@@ -3,6 +3,9 @@ name: HashChat CI/CD
 on:
   push:
     branches: [ "main" ] # Runs every time you push to the main branch
+    paths:
+      - 'SpringBoot_Backend/**' # Only run if files in this folder change
+      - '.github/workflows/your-workflow-file.yml' # Optional: Run if you edit this CI file
 
 jobs:
   build-and-deploy:
