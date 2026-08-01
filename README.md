@@ -4,6 +4,8 @@
 
 https://merry-twilight-8ca8f0.netlify.app
 
+Current Status : Backend Offline On Purpose
+
 ---
 
 ## 📖 Overview
